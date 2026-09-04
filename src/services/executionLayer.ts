@@ -47,11 +47,14 @@ export class ExecutionLayer {
           }
         };
 
-        // Configurable TTL so recovery opportunities expire (demo: lower in .env)
-                const ttlMinutes = Number(process.env.RECOVERY_LINK_TTL_MINUTES || 60);
+               // Configurable TTL so recovery opportunities expire (demo: lower in .env)
+        const ttlMinutes = Number(process.env.RECOVERY_LINK_TTL_MINUTES || 60);
         console.log(`[Execution Layer] Recovery link TTL: ${ttlMinutes} min`);
         if (ttlMinutes > 0) {
-           payload.expire_by = Math.floor(Date.now() / 1000) + Math.max(15, ttlMinutes) * 60;
+          // Razorpay requires expire_by > 15 min out; exactly 900s can fail on
+          // sub-second truncation / clock skew. 60s safety margin.
+          const safeMinutes = Math.max(15, ttlMinutes);
+          payload.expire_by = Math.floor(Date.now() / 1000) + safeMinutes * 60 + 60;
         }
 
 
