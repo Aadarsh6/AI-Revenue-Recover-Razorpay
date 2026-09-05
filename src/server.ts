@@ -126,8 +126,10 @@ if (!skipSignatureValidation) {
           } else {
             console.log(`⌛ Expiry for Case ${caseId} — no longer awaiting payment (likely recovered). No-op.`);
           }
-          if (webhookAuditEntry) {
-            await prisma.auditLog.update({ where: { id: webhookAuditEntry.id }, data: { caseId } });
+            if (webhookAuditEntry) {
+            // Case may have been deleted since the link was created — audit attach is best-effort
+            await prisma.auditLog.update({ where: { id: webhookAuditEntry.id }, data: { caseId } })
+              .catch(() => console.log(`⌛ Audit attach skipped for Case ${caseId} (no longer exists)`));
           }
         } else {
           console.log('⌛ Link expiry without revive notes — not our recovery link. Ignoring.');
